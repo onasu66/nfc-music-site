@@ -1,0 +1,13 @@
+{
+  "title": "Night Signal",
+  "artist": "Your Alias",
+  "edition": "KEY 001",
+  "format": "NTAG215 URL KEY",
+  "duration": "03:18",
+  "audioUrl": "",
+  "coverUrl": "",
+  "accent": "#ff5a3d",
+  "secondary": "#32d5ff",
+  "third": "#d6ff5f",
+  "description": "A private track unlocked by this physical NFC card."
+}

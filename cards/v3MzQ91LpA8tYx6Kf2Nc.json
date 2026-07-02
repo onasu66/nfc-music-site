@@ -1,0 +1,13 @@
+{
+  "title": "Plastic Moon",
+  "artist": "Your Alias",
+  "edition": "KEY 002",
+  "format": "NTAG215 URL KEY",
+  "duration": "04:06",
+  "audioUrl": "",
+  "coverUrl": "",
+  "accent": "#36d87c",
+  "secondary": "#ffcc4d",
+  "third": "#ff6bd6",
+  "description": "A second card key with a different track and color signature."
+}

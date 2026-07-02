@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Keytone</title>
+    <meta name="description" content="Card-based NFC music player" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="stage">
+      <section class="player" aria-live="polite">
+        <div class="art" id="cover" aria-hidden="true">
+          <div class="card-face">
+            <span class="nfc-mark"></span>
+            <span id="editionMark">NFC KEY</span>
+          </div>
+          <div class="record">
+            <span></span>
+          </div>
+        </div>
+
+        <section class="now">
+          <p class="signal" id="status">CARD VERIFIED</p>
+          <h1 id="title">Loading</h1>
+          <p class="artist" id="artist">Please wait</p>
+          <p class="note" id="description"></p>
+
+          <div class="transport">
+            <button class="play" id="playButton" type="button" aria-label="Play">
+              <span id="playIcon"></span>
+            </button>
+            <div class="timeline">
+              <div class="time-row">
+                <span id="currentTime">0:00</span>
+                <span id="duration">0:00</span>
+              </div>
+              <input
+                id="seek"
+                type="range"
+                min="0"
+                max="1000"
+                value="0"
+                aria-label="Seek"
+              />
+            </div>
+          </div>
+        </section>
+
+        <aside class="details">
+          <p>KEY</p>
+          <strong id="cardKey">----</strong>
+          <p>EDITION</p>
+          <strong id="edition">----</strong>
+          <p>FORMAT</p>
+          <strong id="format">NTAG215 URL KEY</strong>
+        </aside>
+
+        <audio id="audio" preload="metadata"></audio>
+      </section>
+    </main>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
