@@ -1,13 +1,11 @@
 {
-  "title": "Plastic Moon",
+  "title": "",
   "artist": "Your Alias",
-  "edition": "KEY 002",
-  "format": "NTAG215 URL KEY",
+  "album": "NFC Demo",
   "duration": "04:06",
-  "audioUrl": "/audio/Glass%20Tide.mp3",
+  "audioUrl": "/audio/GlassTide.mp3",
   "coverUrl": "",
   "accent": "#36d87c",
   "secondary": "#ffcc4d",
-  "third": "#ff6bd6",
-  "description": "A second card key with a different track and color signature."
+  "third": "#ff6bd6"
 }

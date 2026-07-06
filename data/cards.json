@@ -1,0 +1,15 @@
+{
+  "cards": {
+    "v3MzQ91LpA8tYx6Kf2Nc": {
+      "title": "",
+      "artist": "Your Alias",
+      "album": "NFC Demo",
+      "duration": "04:06",
+      "audioUrl": "/audio/GlassTide.mp3",
+      "coverUrl": "",
+      "accent": "#36d87c",
+      "secondary": "#ffcc4d",
+      "third": "#ff6bd6"
+    }
+  }
+}

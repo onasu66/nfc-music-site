@@ -1,19 +1,15 @@
 const elements = {
   player: document.querySelector(".player"),
   cover: document.querySelector("#cover"),
-  editionMark: document.querySelector("#editionMark"),
   status: document.querySelector("#status"),
   title: document.querySelector("#title"),
   artist: document.querySelector("#artist"),
-  description: document.querySelector("#description"),
   duration: document.querySelector("#duration"),
   currentTime: document.querySelector("#currentTime"),
   playButton: document.querySelector("#playButton"),
   seek: document.querySelector("#seek"),
   audio: document.querySelector("#audio"),
   cardKey: document.querySelector("#cardKey"),
-  edition: document.querySelector("#edition"),
-  format: document.querySelector("#format"),
 };
 
 let currentCard = null;
@@ -33,14 +29,10 @@ async function init() {
   }
 
   try {
-    const response = await fetch(`/cards/${cardKey}.json`, { cache: "no-store" });
-    if (!response.ok) {
-      throw new Error(`Card key was rejected: ${response.status}`);
-    }
-
-    currentCard = await response.json();
+    currentCard = await loadCard(cardKey);
     renderCard(currentCard, cardKey);
     bindPlayer();
+    attemptAutoplay();
   } catch (error) {
     renderLocked("Card not recognized", "This NFC key is not registered.");
     console.error(error);
@@ -61,6 +53,46 @@ function sanitizeKey(value = "") {
   return value.replace(/[^a-zA-Z0-9_-]/g, "");
 }
 
+async function loadCard(cardKey) {
+  const [card, registry] = await Promise.all([
+    fetchJsonOptional(`/cards/${cardKey}.json`),
+    fetchJsonOptional("/data/cards.json"),
+  ]);
+  const linkedCard = registry?.cards?.[cardKey] || null;
+  const mergedCard = { ...(card || {}), ...(linkedCard || {}) };
+
+  if (!card && !linkedCard) {
+    throw new Error("Card key was rejected.");
+  }
+
+  return applyCardDefaults(mergedCard);
+}
+
+async function fetchJsonOptional(url) {
+  const response = await fetch(url, { cache: "no-store" });
+  if (!response.ok) return null;
+  return response.json();
+}
+
+function applyCardDefaults(card) {
+  return {
+    title: card.title || titleFromAudioUrl(card.audioUrl) || "Untitled Track",
+    artist: card.artist || "Unknown Artist",
+    album: card.album || "",
+    duration: card.duration || "0:00",
+    audioUrl: card.audioUrl || "",
+    coverUrl: card.coverUrl || "",
+    accent: card.accent || "#36d87c",
+    secondary: card.secondary || "#ffcc4d",
+    third: card.third || "#ff6bd6",
+  };
+}
+
+function titleFromAudioUrl(audioUrl = "") {
+  const fileName = decodeURIComponent(audioUrl.split("/").pop() || "");
+  return fileName.replace(/\.[a-z0-9]+$/i, "").replace(/[_-]+/g, " ").trim();
+}
+
 function renderCard(card, key) {
   document.title = `${card.title} | Keytone`;
   document.documentElement.style.setProperty("--accent", card.accent);
@@ -69,14 +101,10 @@ function renderCard(card, key) {
 
   elements.player.classList.remove("is-locked");
   elements.status.textContent = "CARD VERIFIED";
-  elements.editionMark.textContent = card.edition;
   elements.title.textContent = card.title;
-  elements.artist.textContent = card.artist;
-  elements.description.textContent = card.description;
+  elements.artist.textContent = card.album ? `${card.artist} · ${card.album}` : card.artist;
   elements.duration.textContent = card.duration;
   elements.cardKey.textContent = shortenKey(key);
-  elements.edition.textContent = card.edition;
-  elements.format.textContent = card.format || "NTAG215 URL KEY";
 
   if (card.coverUrl) {
     elements.cover.classList.add("has-cover");
@@ -95,14 +123,10 @@ function renderLocked(title, message) {
   document.title = "Locked | Keytone";
   elements.player.classList.add("is-locked");
   elements.status.textContent = "LOCKED";
-  elements.editionMark.textContent = "NO KEY";
   elements.title.textContent = title;
   elements.artist.textContent = "NFC card required";
-  elements.description.textContent = message;
   elements.duration.textContent = "0:00";
   elements.cardKey.textContent = "missing";
-  elements.edition.textContent = "unverified";
-  elements.format.textContent = "NTAG215 URL KEY";
 }
 
 function bindPlayer() {
@@ -136,6 +160,18 @@ function bindPlayer() {
     }
     updateSynthTime();
   });
+}
+
+async function attemptAutoplay() {
+  if (!currentCard) return;
+
+  try {
+    await togglePlayback();
+  } catch (error) {
+    elements.player.classList.remove("is-playing");
+    elements.playButton.setAttribute("aria-label", "Play");
+    console.info("Autoplay was blocked by the browser. Tap Play to start.", error);
+  }
 }
 
 async function togglePlayback() {

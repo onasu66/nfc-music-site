@@ -1,13 +1,10 @@
 {
   "title": "Hidden Room",
   "artist": "Your Alias",
-  "edition": "KEY 003",
-  "format": "NTAG215 URL KEY",
   "duration": "02:47",
   "audioUrl": "",
   "coverUrl": "",
   "accent": "#c86bff",
   "secondary": "#58f2d7",
-  "third": "#ff7a59",
-  "description": "A short secret take for testing a limited card release."
+  "third": "#ff7a59"
 }
