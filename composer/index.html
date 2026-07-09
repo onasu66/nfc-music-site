@@ -1,0 +1,1139 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Hum to MusicXML Composer</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #080a0b;
+      --panel: #111719;
+      --panel-2: #182022;
+      --ink: #f7faf8;
+      --muted: #aab6b0;
+      --line: rgba(247,250,248,.15);
+      --accent: #5eead4;
+      --accent-2: #a3e635;
+      --warn: #facc15;
+      --danger: #fb7185;
+      --blue: #60a5fa;
+      font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background:
+        radial-gradient(circle at 15% 0%, rgba(94,234,212,.2), transparent 32%),
+        radial-gradient(circle at 92% 12%, rgba(163,230,53,.16), transparent 28%),
+        linear-gradient(150deg, #07090a, #101617 56%, #080a0b);
+      color: var(--ink);
+    }
+
+    body.recording .record-dot {
+      animation: pulse 900ms ease-in-out infinite;
+      background: var(--danger);
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      min-height: 48px;
+      border: 0;
+      border-radius: 8px;
+      background: var(--accent);
+      color: #061112;
+      cursor: pointer;
+      font-weight: 900;
+    }
+
+    button.secondary {
+      background: #253033;
+      color: var(--ink);
+      border: 1px solid var(--line);
+    }
+
+    button.warn {
+      background: var(--warn);
+      color: #17120a;
+    }
+
+    button.danger {
+      background: #3b1b22;
+      color: #fecdd3;
+      border: 1px solid rgba(251,113,133,.42);
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: .45;
+    }
+
+    main {
+      width: min(1160px, calc(100% - 24px));
+      margin: 0 auto;
+      padding: max(14px, env(safe-area-inset-top)) 0 max(14px, env(safe-area-inset-bottom));
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: end;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 7vw, 52px);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .lead {
+      max-width: 760px;
+      margin: 8px 0 0;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .back {
+      display: inline-grid;
+      min-height: 44px;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0 12px;
+      color: var(--ink);
+      font-weight: 800;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(300px, .75fr) minmax(0, 1.25fr);
+      gap: 12px;
+      align-items: start;
+    }
+
+    .panel,
+    .timeline,
+    .editor {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(17,23,25,.9);
+      box-shadow: 0 24px 70px rgba(0,0,0,.32);
+    }
+
+    .panel,
+    .editor {
+      padding: 14px;
+    }
+
+    .stack {
+      display: grid;
+      gap: 12px;
+    }
+
+    label {
+      display: block;
+      margin: 13px 0 7px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      min-height: 46px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8faf8;
+      color: #0f1718;
+      padding: 10px 12px;
+    }
+
+    textarea {
+      min-height: 132px;
+      resize: vertical;
+      line-height: 1.6;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .actions.single {
+      grid-template-columns: 1fr;
+    }
+
+    .record-box {
+      display: grid;
+      gap: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: rgba(255,255,255,.045);
+    }
+
+    .meter {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    .record-dot {
+      width: 14px;
+      aspect-ratio: 1;
+      border-radius: 999px;
+      background: #53615d;
+    }
+
+    .level {
+      height: 8px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255,255,255,.12);
+    }
+
+    .level span {
+      display: block;
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    }
+
+    .hint {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .status {
+      min-height: 50px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 11px 12px;
+      color: var(--muted);
+      line-height: 1.55;
+      background: rgba(255,255,255,.045);
+    }
+
+    .pads {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .pads button {
+      min-height: 58px;
+      color: #07100d;
+      background: #f8faf8;
+    }
+
+    .pads button.rest {
+      background: #334155;
+      color: var(--ink);
+    }
+
+    .duration {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .duration button {
+      min-height: 48px;
+      background: #253033;
+      color: var(--ink);
+      border: 1px solid var(--line);
+    }
+
+    .duration button.active {
+      background: var(--warn);
+      color: #151008;
+    }
+
+    .timeline {
+      min-height: 278px;
+      overflow: hidden;
+    }
+
+    .ruler {
+      display: flex;
+      gap: 1px;
+      border-bottom: 1px solid var(--line);
+      background: var(--line);
+    }
+
+    .ruler span {
+      flex: 1;
+      min-width: 72px;
+      padding: 8px;
+      background: #111719;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .blocks {
+      display: flex;
+      align-items: stretch;
+      min-height: 220px;
+      overflow-x: auto;
+      padding: 14px;
+      gap: 8px;
+      scroll-snap-type: x proximity;
+    }
+
+    .block {
+      position: relative;
+      display: grid;
+      align-content: center;
+      flex: 0 0 calc(var(--beats) * 62px);
+      min-width: 54px;
+      min-height: 104px;
+      border: 2px solid transparent;
+      border-radius: 8px;
+      padding: 10px 8px;
+      scroll-snap-align: start;
+      background: linear-gradient(135deg, #f8faf8, #dffcf2);
+      color: #071112;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .block.rest {
+      background: linear-gradient(135deg, #334155, #1e293b);
+      color: white;
+    }
+
+    .block.selected {
+      border-color: var(--warn);
+      box-shadow: 0 0 0 3px rgba(250,204,21,.18);
+    }
+
+    .block strong {
+      display: block;
+      font-size: 28px;
+      line-height: 1;
+    }
+
+    .block small {
+      display: block;
+      margin-top: 8px;
+      color: inherit;
+      opacity: .72;
+      font-weight: 800;
+    }
+
+    .block .handle {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 22px;
+      border-radius: 0 6px 6px 0;
+      background: rgba(0,0,0,.12);
+    }
+
+    .empty {
+      display: grid;
+      min-width: 100%;
+      place-items: center;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    .edit-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .preview {
+      display: grid;
+      gap: 10px;
+    }
+
+    .preview pre {
+      max-height: 170px;
+      overflow: auto;
+      margin: 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: rgba(0,0,0,.28);
+      color: #d7fff6;
+      white-space: pre-wrap;
+      line-height: 1.55;
+    }
+
+    @media (max-width: 900px) {
+      main {
+        width: min(100% - 16px, 1160px);
+      }
+
+      header {
+        grid-template-columns: 1fr;
+      }
+
+      .layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .lead {
+        display: none;
+      }
+
+      .grid-2,
+      .actions {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .pads {
+        grid-template-columns: repeat(4, 1fr);
+      }
+
+      .pads button {
+        min-height: 54px;
+        padding: 0 4px;
+      }
+
+      .duration {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .edit-row {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .block {
+        flex-basis: calc(var(--beats) * 54px);
+      }
+    }
+
+    @keyframes pulse {
+      50% {
+        opacity: .42;
+        transform: scale(.82);
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>Hum Composer</h1>
+        <p class="lead">鼻歌からドレミの下書きを作って、ブロックの長さを直感的に調整し、MusicXMLとして保存します。拍数や音符名を知らなくても使える形にしています。</p>
+      </div>
+      <a class="back" href="/game">動く譜面へ</a>
+    </header>
+
+    <div class="layout">
+      <section class="stack">
+        <div class="panel">
+          <div class="record-box">
+            <div class="meter">
+              <span class="record-dot" aria-hidden="true"></span>
+              <div class="level"><span id="level"></span></div>
+              <strong id="liveNote">--</strong>
+            </div>
+            <div class="actions">
+              <button id="record">鼻歌を録音</button>
+              <button id="stopRecord" class="secondary" disabled>停止</button>
+            </div>
+            <p class="hint">静かな場所で、1音ずつ少し長めに歌うと取りやすいです。リズムは後でブロック幅で直せます。</p>
+          </div>
+
+          <div class="grid-2">
+            <div>
+              <label for="keySelect">キー</label>
+              <select id="keySelect">
+                <option value="C" selected>C / ハ長調</option>
+                <option value="G">G / ト長調</option>
+                <option value="D">D / ニ長調</option>
+                <option value="A">A / イ長調</option>
+              </select>
+            </div>
+            <div>
+              <label for="bpm">速さ</label>
+              <input id="bpm" type="number" min="50" max="180" value="92">
+            </div>
+          </div>
+
+          <label>長さ</label>
+          <div class="duration" id="durationButtons">
+            <button data-beats="0.5">短い</button>
+            <button data-beats="1" class="active">ふつう</button>
+            <button data-beats="2">長い</button>
+            <button data-beats="4">伸ばす</button>
+          </div>
+
+          <label>音を追加</label>
+          <div class="pads" id="notePads"></div>
+
+          <div class="actions">
+            <button id="play">再生</button>
+            <button id="stopPlay" class="secondary">止める</button>
+          </div>
+
+          <div class="actions">
+            <button id="downloadXml" class="warn">MusicXML保存</button>
+            <button id="openScore" class="secondary">動く譜面で開く</button>
+          </div>
+
+          <div id="status" class="status">鼻歌を録音するか、ドレミボタンで音を追加してください。</div>
+        </div>
+
+        <div class="editor">
+          <label for="textInput">ドレミ文字でも編集できます</label>
+          <textarea id="textInput" spellcheck="false" placeholder="例: ドふつう レふつう ミ長い 休短い"></textarea>
+          <div class="actions">
+            <button id="applyText" class="secondary">文字から反映</button>
+            <button id="copyText" class="secondary">文字をコピー</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="stack">
+        <div class="timeline">
+          <div class="ruler">
+            <span>1</span><span>2</span><span>3</span><span>4</span>
+          </div>
+          <div class="blocks" id="blocks">
+            <div class="empty">ここに音ブロックが並びます。<br>長い音ほど横に長く表示されます。</div>
+          </div>
+        </div>
+
+        <div class="editor">
+          <strong>選んだブロックを調整</strong>
+          <div class="edit-row">
+            <button id="shorter" class="secondary">短く</button>
+            <button id="longer" class="secondary">長く</button>
+            <button id="changePitch" class="secondary">音変更</button>
+            <button id="deleteNote" class="danger">削除</button>
+          </div>
+          <p class="hint">ブロックをタップしてから調整します。右端を横にドラッグしても長さを変えられます。</p>
+        </div>
+
+        <div class="editor preview">
+          <strong>MusicXMLプレビュー</strong>
+          <pre id="xmlPreview"></pre>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const solfegeByKey = {
+      C: [
+        ["ド", 60], ["レ", 62], ["ミ", 64], ["ファ", 65], ["ソ", 67], ["ラ", 69], ["シ", 71],
+      ],
+      G: [
+        ["ド", 67], ["レ", 69], ["ミ", 71], ["ファ#", 72], ["ソ", 74], ["ラ", 76], ["シ", 78],
+      ],
+      D: [
+        ["ド", 62], ["レ", 64], ["ミ", 66], ["ファ#", 67], ["ソ", 69], ["ラ", 71], ["シ", 73],
+      ],
+      A: [
+        ["ド", 69], ["レ", 71], ["ミ", 73], ["ファ#", 74], ["ソ#", 76], ["ラ", 78], ["シ", 80],
+      ],
+    };
+
+    const durationLabels = new Map([
+      [0.5, "短い"],
+      [1, "ふつう"],
+      [2, "長い"],
+      [4, "伸ばす"],
+    ]);
+
+    const durationTypes = new Map([
+      [0.5, "eighth"],
+      [1, "quarter"],
+      [2, "half"],
+      [4, "whole"],
+    ]);
+
+    const state = {
+      notes: [],
+      selectedId: null,
+      duration: 1,
+      audioContext: null,
+      recorderStream: null,
+      analyser: null,
+      recording: false,
+      raf: 0,
+      lastCapturedMidi: null,
+      lastCaptureAt: 0,
+      playTimers: [],
+    };
+
+    const elements = {
+      record: document.querySelector("#record"),
+      stopRecord: document.querySelector("#stopRecord"),
+      level: document.querySelector("#level"),
+      liveNote: document.querySelector("#liveNote"),
+      keySelect: document.querySelector("#keySelect"),
+      bpm: document.querySelector("#bpm"),
+      durationButtons: document.querySelector("#durationButtons"),
+      notePads: document.querySelector("#notePads"),
+      blocks: document.querySelector("#blocks"),
+      play: document.querySelector("#play"),
+      stopPlay: document.querySelector("#stopPlay"),
+      downloadXml: document.querySelector("#downloadXml"),
+      openScore: document.querySelector("#openScore"),
+      status: document.querySelector("#status"),
+      textInput: document.querySelector("#textInput"),
+      applyText: document.querySelector("#applyText"),
+      copyText: document.querySelector("#copyText"),
+      shorter: document.querySelector("#shorter"),
+      longer: document.querySelector("#longer"),
+      changePitch: document.querySelector("#changePitch"),
+      deleteNote: document.querySelector("#deleteNote"),
+      xmlPreview: document.querySelector("#xmlPreview"),
+    };
+
+    renderPads();
+    renderAll();
+
+    elements.keySelect.addEventListener("change", () => {
+      renderPads();
+      renderAll();
+    });
+
+    elements.durationButtons.addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-beats]");
+      if (!button) return;
+      state.duration = Number(button.dataset.beats);
+      elements.durationButtons.querySelectorAll("button").forEach((item) => {
+        item.classList.toggle("active", item === button);
+      });
+    });
+
+    elements.notePads.addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-midi]");
+      if (!button) return;
+      addNote(Number(button.dataset.midi), button.dataset.label, state.duration);
+      playTone(Number(button.dataset.midi), 0.22);
+    });
+
+    elements.blocks.addEventListener("click", (event) => {
+      const block = event.target.closest(".block");
+      if (!block) return;
+      state.selectedId = block.dataset.id;
+      renderBlocks();
+    });
+
+    let dragTarget = null;
+    let dragStartX = 0;
+    let dragStartBeats = 1;
+
+    elements.blocks.addEventListener("pointerdown", (event) => {
+      const handle = event.target.closest(".handle");
+      const block = event.target.closest(".block");
+      if (!handle || !block) return;
+      dragTarget = state.notes.find((note) => note.id === block.dataset.id);
+      if (!dragTarget) return;
+      state.selectedId = dragTarget.id;
+      dragStartX = event.clientX;
+      dragStartBeats = dragTarget.beats;
+      block.setPointerCapture(event.pointerId);
+    });
+
+    elements.blocks.addEventListener("pointermove", (event) => {
+      if (!dragTarget) return;
+      const delta = event.clientX - dragStartX;
+      const step = Math.round(delta / 38);
+      dragTarget.beats = clampDuration(dragStartBeats + step);
+      renderAll();
+    });
+
+    elements.blocks.addEventListener("pointerup", () => {
+      dragTarget = null;
+    });
+
+    elements.shorter.addEventListener("click", () => editSelected((note) => {
+      note.beats = nextDuration(note.beats, -1);
+    }));
+
+    elements.longer.addEventListener("click", () => editSelected((note) => {
+      note.beats = nextDuration(note.beats, 1);
+    }));
+
+    elements.changePitch.addEventListener("click", () => editSelected((note) => {
+      if (note.rest) return;
+      const scale = solfegeByKey[elements.keySelect.value];
+      const index = scale.findIndex((item) => item[1] === note.midi);
+      const next = scale[(index + 1 + scale.length) % scale.length];
+      note.label = next[0];
+      note.midi = next[1];
+      playTone(note.midi, 0.2);
+    }));
+
+    elements.deleteNote.addEventListener("click", () => {
+      if (!state.selectedId) return;
+      state.notes = state.notes.filter((note) => note.id !== state.selectedId);
+      state.selectedId = null;
+      renderAll();
+    });
+
+    elements.play.addEventListener("click", playComposition);
+    elements.stopPlay.addEventListener("click", stopPlayback);
+    elements.downloadXml.addEventListener("click", downloadMusicXml);
+    elements.openScore.addEventListener("click", openInScore);
+    elements.applyText.addEventListener("click", applyTextInput);
+    elements.copyText.addEventListener("click", async () => {
+      await navigator.clipboard?.writeText(elements.textInput.value);
+      setStatus("ドレミ文字をコピーしました。");
+    });
+    elements.record.addEventListener("click", startRecording);
+    elements.stopRecord.addEventListener("click", stopRecording);
+
+    function renderPads() {
+      const notes = solfegeByKey[elements.keySelect.value];
+      elements.notePads.innerHTML = notes.map(([label, midi]) => {
+        return `<button data-label="${label}" data-midi="${midi}">${label}</button>`;
+      }).join("") + `<button class="rest" data-label="休" data-midi="-1">休</button>`;
+    }
+
+    function addNote(midi, label, beats) {
+      state.notes.push({
+        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
+        midi,
+        label,
+        beats,
+        rest: midi < 0,
+      });
+      state.selectedId = state.notes[state.notes.length - 1].id;
+      renderAll();
+    }
+
+    function renderAll() {
+      renderBlocks();
+      renderText();
+      elements.xmlPreview.textContent = buildMusicXml();
+    }
+
+    function renderBlocks() {
+      if (!state.notes.length) {
+        elements.blocks.innerHTML = `<div class="empty">ここに音ブロックが並びます。<br>長い音ほど横に長く表示されます。</div>`;
+        return;
+      }
+
+      elements.blocks.innerHTML = state.notes.map((note) => {
+        const selected = note.id === state.selectedId ? " selected" : "";
+        const rest = note.rest ? " rest" : "";
+        const duration = durationLabel(note.beats);
+        return `
+          <div class="block${selected}${rest}" data-id="${note.id}" style="--beats:${note.beats}">
+            <strong>${note.label}</strong>
+            <small>${duration}</small>
+            <span class="handle" aria-hidden="true"></span>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderText() {
+      elements.textInput.value = state.notes.map((note) => `${note.label}${durationLabel(note.beats)}`).join(" ");
+    }
+
+    function durationLabel(beats) {
+      if (durationLabels.has(beats)) return durationLabels.get(beats);
+      return `${beats}拍`;
+    }
+
+    function clampDuration(value) {
+      const durations = [0.5, 1, 2, 4];
+      return durations.reduce((best, current) => {
+        return Math.abs(current - value) < Math.abs(best - value) ? current : best;
+      }, durations[0]);
+    }
+
+    function nextDuration(value, direction) {
+      const durations = [0.5, 1, 2, 4];
+      const current = durations.indexOf(clampDuration(value));
+      const next = Math.max(0, Math.min(durations.length - 1, current + direction));
+      return durations[next];
+    }
+
+    function editSelected(update) {
+      const note = state.notes.find((item) => item.id === state.selectedId);
+      if (!note) {
+        setStatus("先に音ブロックを選んでください。");
+        return;
+      }
+      update(note);
+      renderAll();
+    }
+
+    async function startRecording() {
+      try {
+        stopPlayback();
+        state.audioContext = state.audioContext || new AudioContext();
+        if (state.audioContext.state === "suspended") await state.audioContext.resume();
+        state.recorderStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const source = state.audioContext.createMediaStreamSource(state.recorderStream);
+        state.analyser = state.audioContext.createAnalyser();
+        state.analyser.fftSize = 2048;
+        source.connect(state.analyser);
+        state.recording = true;
+        state.lastCapturedMidi = null;
+        state.lastCaptureAt = 0;
+        document.body.classList.add("recording");
+        elements.record.disabled = true;
+        elements.stopRecord.disabled = false;
+        setStatus("録音中です。1音ずつ少し長めに歌ってください。");
+        detectPitchLoop();
+      } catch (error) {
+        setStatus(`マイクを使えませんでした: ${error.message}`);
+      }
+    }
+
+    function stopRecording() {
+      state.recording = false;
+      cancelAnimationFrame(state.raf);
+      state.recorderStream?.getTracks().forEach((track) => track.stop());
+      state.recorderStream = null;
+      document.body.classList.remove("recording");
+      elements.record.disabled = false;
+      elements.stopRecord.disabled = true;
+      elements.liveNote.textContent = "--";
+      elements.level.style.width = "0%";
+      setStatus("録音を停止しました。ブロックの長さや音を直して、再生で確認してください。");
+    }
+
+    function detectPitchLoop() {
+      if (!state.recording || !state.analyser) return;
+      const buffer = new Float32Array(state.analyser.fftSize);
+      state.analyser.getFloatTimeDomainData(buffer);
+      const level = rms(buffer);
+      elements.level.style.width = `${Math.min(100, level * 420)}%`;
+
+      const frequency = level > 0.018 ? autoCorrelate(buffer, state.audioContext.sampleRate) : -1;
+      if (frequency > 0) {
+        const rawMidi = frequencyToMidi(frequency);
+        const quantized = quantizeToKey(rawMidi);
+        elements.liveNote.textContent = `${quantized.label}`;
+        maybeCaptureNote(quantized);
+      } else {
+        elements.liveNote.textContent = "--";
+      }
+
+      state.raf = requestAnimationFrame(detectPitchLoop);
+    }
+
+    function maybeCaptureNote(note) {
+      const now = performance.now();
+      const same = state.lastCapturedMidi === note.midi;
+      if (same && now - state.lastCaptureAt < 900) return;
+      if (!same && now - state.lastCaptureAt < 420) return;
+      addNote(note.midi, note.label, 1);
+      state.lastCapturedMidi = note.midi;
+      state.lastCaptureAt = now;
+    }
+
+    function rms(buffer) {
+      let sum = 0;
+      for (const value of buffer) sum += value * value;
+      return Math.sqrt(sum / buffer.length);
+    }
+
+    function autoCorrelate(buffer, sampleRate) {
+      const size = buffer.length;
+      let bestOffset = -1;
+      let bestCorrelation = 0;
+      const minOffset = Math.floor(sampleRate / 900);
+      const maxOffset = Math.floor(sampleRate / 80);
+
+      for (let offset = minOffset; offset <= maxOffset; offset++) {
+        let correlation = 0;
+        for (let i = 0; i < size - offset; i++) {
+          correlation += 1 - Math.abs(buffer[i] - buffer[i + offset]);
+        }
+        correlation /= size - offset;
+        if (correlation > bestCorrelation) {
+          bestCorrelation = correlation;
+          bestOffset = offset;
+        }
+      }
+
+      return bestCorrelation > 0.9 ? sampleRate / bestOffset : -1;
+    }
+
+    function frequencyToMidi(frequency) {
+      return Math.round(69 + 12 * Math.log2(frequency / 440));
+    }
+
+    function quantizeToKey(midi) {
+      const scale = solfegeByKey[elements.keySelect.value];
+      let best = scale[0];
+      let bestDistance = Infinity;
+      for (let octaveShift = -24; octaveShift <= 24; octaveShift += 12) {
+        for (const [label, baseMidi] of scale) {
+          const candidate = baseMidi + octaveShift;
+          const distance = Math.abs(candidate - midi);
+          if (distance < bestDistance) {
+            best = [label, candidate];
+            bestDistance = distance;
+          }
+        }
+      }
+      return { label: best[0], midi: Math.max(55, Math.min(88, best[1])) };
+    }
+
+    function playComposition() {
+      if (!state.notes.length) {
+        setStatus("先に音を追加してください。");
+        return;
+      }
+      stopPlayback();
+      state.audioContext = state.audioContext || new AudioContext();
+      if (state.audioContext.state === "suspended") state.audioContext.resume();
+      const bpm = Number(elements.bpm.value) || 92;
+      let offset = 0;
+      state.notes.forEach((note) => {
+        const delay = offset * 60 / bpm * 1000;
+        const seconds = note.beats * 60 / bpm * 0.9;
+        const timer = window.setTimeout(() => {
+          if (!note.rest) playTone(note.midi, seconds);
+          state.selectedId = note.id;
+          renderBlocks();
+        }, delay);
+        state.playTimers.push(timer);
+        offset += note.beats;
+      });
+      setStatus("再生中です。耳で確認しながら、長さや音を直してください。");
+    }
+
+    function stopPlayback() {
+      state.playTimers.forEach((timer) => clearTimeout(timer));
+      state.playTimers = [];
+    }
+
+    function playTone(midi, seconds = 0.25) {
+      if (midi < 0) return;
+      state.audioContext = state.audioContext || new AudioContext();
+      const osc = state.audioContext.createOscillator();
+      const gain = state.audioContext.createGain();
+      const filter = state.audioContext.createBiquadFilter();
+      const now = state.audioContext.currentTime;
+      osc.type = "triangle";
+      osc.frequency.value = 440 * Math.pow(2, (midi - 69) / 12);
+      filter.type = "lowpass";
+      filter.frequency.value = 1700;
+      gain.gain.setValueAtTime(0.001, now);
+      gain.gain.linearRampToValueAtTime(0.08, now + 0.02);
+      gain.gain.setValueAtTime(0.052, now + Math.max(0.03, seconds - 0.06));
+      gain.gain.exponentialRampToValueAtTime(0.001, now + seconds);
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(state.audioContext.destination);
+      osc.start(now);
+      osc.stop(now + seconds + 0.02);
+    }
+
+    function applyTextInput() {
+      const tokens = elements.textInput.value.split(/\s+/).filter(Boolean);
+      const scale = solfegeByKey[elements.keySelect.value];
+      const nextNotes = [];
+      for (const token of tokens) {
+        const parsed = parseToken(token, scale);
+        if (parsed) nextNotes.push(parsed);
+      }
+      state.notes = nextNotes;
+      state.selectedId = state.notes.at(-1)?.id || null;
+      renderAll();
+      setStatus(`${state.notes.length}個の音ブロックを文字から反映しました。`);
+    }
+
+    function parseToken(token, scale) {
+      const durationMap = [
+        ["伸ばす", 4],
+        ["長い", 2],
+        ["ふつう", 1],
+        ["短い", 0.5],
+      ];
+      let beats = 1;
+      let label = token;
+      for (const [suffix, value] of durationMap) {
+        if (token.endsWith(suffix)) {
+          beats = value;
+          label = token.slice(0, -suffix.length);
+          break;
+        }
+      }
+      if (label === "休") return makeNote(-1, "休", beats, true);
+      const pitch = scale.find((item) => item[0] === label);
+      if (!pitch) return null;
+      return makeNote(pitch[1], pitch[0], beats, false);
+    }
+
+    function makeNote(midi, label, beats, rest) {
+      return {
+        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
+        midi,
+        label,
+        beats,
+        rest,
+      };
+    }
+
+    function downloadMusicXml() {
+      const xml = buildMusicXml();
+      const blob = new Blob([xml], { type: "application/vnd.recordare.musicxml+xml" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "hum-composer.musicxml";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      setStatus("MusicXMLを保存しました。動く譜面で読み込めます。");
+    }
+
+    function openInScore() {
+      const xml = buildMusicXml();
+      const blob = new Blob([xml], { type: "application/vnd.recordare.musicxml+xml" });
+      const file = new File([blob], "hum-composer.musicxml", { type: blob.type });
+      window.generatedMusicXml = file;
+      setStatus("MusicXMLを作りました。保存して /game で読み込んでください。");
+      window.open("/game", "_blank");
+    }
+
+    function buildMusicXml() {
+      const divisions = 2;
+      const measures = [];
+      let current = [];
+      let beatSum = 0;
+      let measureNumber = 1;
+
+      for (const note of state.notes) {
+        if (beatSum + note.beats > 4 && current.length) {
+          measures.push({ number: measureNumber++, notes: current });
+          current = [];
+          beatSum = 0;
+        }
+        current.push(note);
+        beatSum += note.beats;
+        if (beatSum >= 4) {
+          measures.push({ number: measureNumber++, notes: current });
+          current = [];
+          beatSum = 0;
+        }
+      }
+      if (current.length) measures.push({ number: measureNumber++, notes: current });
+      if (!measures.length) measures.push({ number: 1, notes: [] });
+
+      return `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 4.0 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">
+<score-partwise version="4.0">
+  <part-list>
+    <score-part id="P1">
+      <part-name>Violin</part-name>
+    </score-part>
+  </part-list>
+  <part id="P1">
+${measures.map((measure, index) => renderMeasure(measure, index === 0, divisions)).join("\n")}
+  </part>
+</score-partwise>
+`;
+    }
+
+    function renderMeasure(measure, first, divisions) {
+      const attrs = first ? `
+      <attributes>
+        <divisions>${divisions}</divisions>
+        <key><fifths>${keyFifths(elements.keySelect.value)}</fifths></key>
+        <time><beats>4</beats><beat-type>4</beat-type></time>
+        <clef><sign>G</sign><line>2</line></clef>
+      </attributes>
+      <direction placement="above">
+        <direction-type><metronome><beat-unit>quarter</beat-unit><per-minute>${Number(elements.bpm.value) || 92}</per-minute></metronome></direction-type>
+        <sound tempo="${Number(elements.bpm.value) || 92}"/>
+      </direction>` : "";
+
+      const notesXml = measure.notes.length
+        ? measure.notes.map((note) => renderXmlNote(note, divisions)).join("\n")
+        : renderXmlNote({ rest: true, beats: 4 }, divisions);
+
+      return `    <measure number="${measure.number}">${attrs}
+${notesXml}
+    </measure>`;
+    }
+
+    function renderXmlNote(note, divisions) {
+      const duration = Math.max(1, Math.round(note.beats * divisions));
+      const type = durationTypes.get(note.beats) || "quarter";
+      if (note.rest) {
+        return `      <note>
+        <rest/>
+        <duration>${duration}</duration>
+        <type>${type}</type>
+      </note>`;
+      }
+      const pitch = midiToPitch(note.midi);
+      const alterXml = pitch.alter ? `\n          <alter>${pitch.alter}</alter>` : "";
+      return `      <note>
+        <pitch>
+          <step>${pitch.step}</step>${alterXml}
+          <octave>${pitch.octave}</octave>
+        </pitch>
+        <duration>${duration}</duration>
+        <type>${type}</type>
+      </note>`;
+    }
+
+    function midiToPitch(midi) {
+      const names = [
+        ["C", 0], ["C", 1], ["D", 0], ["D", 1], ["E", 0], ["F", 0],
+        ["F", 1], ["G", 0], ["G", 1], ["A", 0], ["A", 1], ["B", 0],
+      ];
+      const [step, alter] = names[midi % 12];
+      return { step, alter, octave: Math.floor(midi / 12) - 1 };
+    }
+
+    function keyFifths(key) {
+      return { C: 0, G: 1, D: 2, A: 3 }[key] || 0;
+    }
+
+    function setStatus(message) {
+      elements.status.textContent = message;
+      elements.xmlPreview.textContent = buildMusicXml();
+    }
+  </script>
+</body>
+</html>
