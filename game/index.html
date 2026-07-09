@@ -1,0 +1,965 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Violin Street Score</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #070908;
+      --panel: #101514;
+      --panel-2: #171d1b;
+      --ink: #f8faf7;
+      --muted: #a8b3ad;
+      --line: rgba(248, 250, 247, 0.16);
+      --accent: #4ade80;
+      --warn: #facc15;
+      --danger: #fb7185;
+      font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background:
+        linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(255,255,255,.035) 1px, transparent 1px),
+        radial-gradient(circle at 20% 0%, rgba(74,222,128,.18), transparent 34%),
+        linear-gradient(160deg, #050706, #0f1413 54%, #070908);
+      background-size: 44px 44px, 44px 44px, auto, auto;
+      color: var(--ink);
+      overscroll-behavior: none;
+    }
+
+    body.practice {
+      overflow: hidden;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      min-height: 48px;
+      border: 0;
+      border-radius: 8px;
+      background: var(--accent);
+      color: #06100a;
+      cursor: pointer;
+      font-weight: 900;
+    }
+
+    button.secondary {
+      background: #2d3633;
+      color: var(--ink);
+      border: 1px solid var(--line);
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: .45;
+    }
+
+    main {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-height: 100vh;
+      padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+      gap: 12px;
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: end;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(26px, 7vw, 48px);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .lead {
+      margin: 8px 0 0;
+      max-width: 760px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .back {
+      display: inline-grid;
+      min-height: 44px;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 0 12px;
+      color: var(--ink);
+      font-weight: 800;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .shell {
+      display: grid;
+      grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
+      gap: 12px;
+      min-height: 0;
+    }
+
+    .controls,
+    .scoreboard {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(16, 21, 20, .88);
+      box-shadow: 0 18px 60px rgba(0,0,0,.34);
+    }
+
+    .controls {
+      align-self: start;
+      padding: 14px;
+    }
+
+    label {
+      display: block;
+      margin: 14px 0 7px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    input[type="file"],
+    input[type="number"],
+    select {
+      width: 100%;
+      min-height: 46px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8faf7;
+      color: #101514;
+      padding: 10px 12px;
+    }
+
+    input[type="file"] {
+      border-style: dashed;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .actions.single {
+      grid-template-columns: 1fr;
+    }
+
+    .toggle {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      margin-top: 12px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255,255,255,.05);
+      line-height: 1.45;
+    }
+
+    .toggle input {
+      width: 22px;
+      height: 22px;
+      margin-top: 2px;
+      accent-color: var(--accent);
+      flex: 0 0 auto;
+    }
+
+    .toggle strong {
+      display: block;
+    }
+
+    .toggle span span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .stat {
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: rgba(255,255,255,.055);
+    }
+
+    .stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .stat strong {
+      display: block;
+      margin-top: 3px;
+      overflow: hidden;
+      font-size: 22px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .status {
+      min-height: 54px;
+      margin-top: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      color: var(--muted);
+      line-height: 1.55;
+      background: rgba(255,255,255,.055);
+    }
+
+    .scoreboard {
+      position: relative;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      min-height: 0;
+      overflow: hidden;
+      background: #080b0a;
+    }
+
+    .heads-up {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1px;
+      border-bottom: 1px solid var(--line);
+      background: var(--line);
+    }
+
+    .heads-up div {
+      min-width: 0;
+      padding: 11px 12px;
+      background: #101514;
+    }
+
+    .heads-up span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .heads-up strong {
+      display: block;
+      margin-top: 2px;
+      overflow: hidden;
+      font-size: clamp(18px, 3vw, 28px);
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      min-height: 560px;
+      background: #080b0a;
+      touch-action: none;
+    }
+
+    .string-labels {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-top: 1px solid var(--line);
+      background: #101514;
+    }
+
+    .string-labels div {
+      min-width: 0;
+      padding: 12px 8px;
+      border-right: 1px solid var(--line);
+      text-align: center;
+      font-weight: 900;
+    }
+
+    .string-labels div:last-child { border-right: 0; }
+
+    .practice .controls,
+    .practice header {
+      display: none;
+    }
+
+    .practice main {
+      padding: 0;
+    }
+
+    .practice .shell {
+      display: block;
+    }
+
+    .practice .scoreboard {
+      width: 100vw;
+      height: 100vh;
+      border: 0;
+      border-radius: 0;
+    }
+
+    .practice canvas {
+      min-height: 0;
+    }
+
+    @media (max-width: 900px) {
+      main {
+        min-height: 100svh;
+      }
+
+      header {
+        grid-template-columns: 1fr;
+      }
+
+      .shell {
+        grid-template-columns: 1fr;
+      }
+
+      .controls {
+        order: 2;
+      }
+
+      .scoreboard {
+        min-height: 64svh;
+        order: 1;
+      }
+
+      canvas {
+        min-height: 58svh;
+      }
+    }
+
+    @media (max-width: 560px) {
+      main {
+        padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+      }
+
+      .lead {
+        display: none;
+      }
+
+      .controls {
+        padding: 12px;
+      }
+
+      .grid-2,
+      .actions {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .heads-up {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .heads-up div:last-child {
+        grid-column: 1 / -1;
+      }
+
+      .heads-up div {
+        padding: 9px 10px;
+      }
+
+      .string-labels div {
+        padding: 10px 4px;
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>Violin Street Score</h1>
+        <p class="lead">MusicXMLを、外でも見やすいバイオリン用の動く譜面に変換します。叩くゲームではなく、弦・指番号・音名を大きく表示して、演奏のガイドとして使えます。</p>
+      </div>
+      <a class="back" href="/">変換画面へ戻る</a>
+    </header>
+
+    <div class="shell">
+      <section class="controls">
+        <label for="file">MusicXMLファイル</label>
+        <input id="file" type="file" accept=".musicxml,.xml,.mxl">
+
+        <div class="grid-2">
+          <div>
+            <label for="bpm">BPM</label>
+            <input id="bpm" type="number" min="40" max="220" value="92">
+          </div>
+          <div>
+            <label for="zoom">表示密度</label>
+            <select id="zoom">
+              <option value="5.6">ゆっくり広め</option>
+              <option value="4.4" selected>標準</option>
+              <option value="3.4">詰めて表示</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="start" disabled>再生</button>
+          <button id="stop" class="secondary" disabled>停止</button>
+        </div>
+
+        <div class="actions">
+          <button id="practice" class="secondary" disabled>全画面譜面</button>
+          <button id="reset" class="secondary" disabled>先頭へ</button>
+        </div>
+
+        <div class="actions single">
+          <button id="downloadPage" class="secondary">オフライン用HTML保存</button>
+        </div>
+
+        <label class="toggle">
+          <input id="sound" type="checkbox" checked>
+          <span>
+            <strong>音も鳴らす</strong>
+            <span>外で音を出したくない時はオフにできます。</span>
+          </span>
+        </label>
+
+        <label class="toggle">
+          <input id="bright" type="checkbox" checked>
+          <span>
+            <strong>屋外向け表示</strong>
+            <span>太陽光の下でも見やすい太い線と強い色にします。</span>
+          </span>
+        </label>
+
+        <div class="stats">
+          <div class="stat"><span>ノート数</span><strong id="count">0</strong></div>
+          <div class="stat"><span>現在</span><strong id="position">0:00</strong></div>
+        </div>
+
+        <div id="status" class="status">MusicXMLを選ぶと、弦ごとの動く譜面に変換します。</div>
+      </section>
+
+      <section class="scoreboard">
+        <div class="heads-up">
+          <div><span>今の音</span><strong id="nowNote">--</strong></div>
+          <div><span>押さえる場所</span><strong id="nowFinger">--</strong></div>
+          <div><span>次</span><strong id="nextNote">--</strong></div>
+        </div>
+        <canvas id="score" width="900" height="680"></canvas>
+        <div class="string-labels">
+          <div>G線</div>
+          <div>D線</div>
+          <div>A線</div>
+          <div>E線</div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const fileInput = document.querySelector("#file");
+    const startButton = document.querySelector("#start");
+    const stopButton = document.querySelector("#stop");
+    const practiceButton = document.querySelector("#practice");
+    const resetButton = document.querySelector("#reset");
+    const downloadPageButton = document.querySelector("#downloadPage");
+    const bpmInput = document.querySelector("#bpm");
+    const zoomSelect = document.querySelector("#zoom");
+    const soundInput = document.querySelector("#sound");
+    const brightInput = document.querySelector("#bright");
+    const statusEl = document.querySelector("#status");
+    const countEl = document.querySelector("#count");
+    const positionEl = document.querySelector("#position");
+    const nowNoteEl = document.querySelector("#nowNote");
+    const nowFingerEl = document.querySelector("#nowFinger");
+    const nextNoteEl = document.querySelector("#nextNote");
+    const canvas = document.querySelector("#score");
+    const ctx = canvas.getContext("2d");
+
+    const strings = [
+      { name: "G", open: 55, color: "#818cf8" },
+      { name: "D", open: 62, color: "#22d3ee" },
+      { name: "A", open: 69, color: "#4ade80" },
+      { name: "E", open: 76, color: "#fb923c" },
+    ];
+
+    const fingerNames = {
+      0: "開放",
+      1: "1低",
+      2: "1",
+      3: "2低",
+      4: "2",
+      5: "3",
+      6: "4低",
+      7: "4",
+    };
+
+    let sourceNotes = [];
+    let notes = [];
+    let running = false;
+    let startedAt = 0;
+    let pausedBeat = 0;
+    let animation = 0;
+    let audioContext;
+    let activeSounds = [];
+    const GENERATED_XML_KEY = "violinStreetScore.generatedMusicXml";
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      const scale = window.devicePixelRatio || 1;
+      canvas.width = Math.max(320, Math.floor(rect.width * scale));
+      canvas.height = Math.max(360, Math.floor(rect.height * scale));
+      ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    }
+
+    window.addEventListener("resize", () => {
+      resizeCanvas();
+      draw(currentBeat());
+    });
+
+    fileInput.addEventListener("change", async () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        sourceNotes = parseMusicXml(text);
+        notes = buildScoreNotes(sourceNotes);
+        pausedBeat = 0;
+        countEl.textContent = String(notes.length);
+        const ready = notes.length > 0;
+        startButton.disabled = !ready;
+        practiceButton.disabled = !ready;
+        resetButton.disabled = !ready;
+        statusEl.textContent = ready
+          ? `${notes.length}個のノートを読み込みました。外で使う時は「全画面譜面」を押すと見やすいです。`
+          : "バイオリンで弾ける範囲のメロディが見つかりませんでした。";
+        updateHeadsUp(0);
+        draw(0);
+      } catch (error) {
+        sourceNotes = [];
+        notes = [];
+        startButton.disabled = true;
+        practiceButton.disabled = true;
+        resetButton.disabled = true;
+        countEl.textContent = "0";
+        statusEl.textContent = `読み込みに失敗しました: ${error.message}`;
+        draw(0);
+      }
+    });
+
+    startButton.addEventListener("click", startScore);
+    stopButton.addEventListener("click", () => stopScore("停止しました。"));
+    resetButton.addEventListener("click", resetScore);
+    downloadPageButton.addEventListener("click", downloadOfflinePage);
+    zoomSelect.addEventListener("change", () => draw(currentBeat()));
+    brightInput.addEventListener("change", () => draw(currentBeat()));
+
+    practiceButton.addEventListener("click", async () => {
+      document.body.classList.toggle("practice");
+      practiceButton.textContent = document.body.classList.contains("practice") ? "通常表示" : "全画面譜面";
+      if (document.body.classList.contains("practice") && document.documentElement.requestFullscreen) {
+        try {
+          await document.documentElement.requestFullscreen();
+        } catch (error) {
+          // Fullscreen can be blocked; the layout still switches.
+        }
+      }
+      window.setTimeout(() => {
+        resizeCanvas();
+        draw(currentBeat());
+      }, 120);
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && document.body.classList.contains("practice")) {
+        document.body.classList.remove("practice");
+        practiceButton.textContent = "全画面譜面";
+        resizeCanvas();
+        draw(currentBeat());
+      }
+    });
+
+    function loadGeneratedScore() {
+      const text = localStorage.getItem(GENERATED_XML_KEY);
+      if (!text) return false;
+      try {
+        sourceNotes = parseMusicXml(text);
+        notes = buildScoreNotes(sourceNotes);
+        pausedBeat = 0;
+        countEl.textContent = String(notes.length);
+        const ready = notes.length > 0;
+        startButton.disabled = !ready;
+        practiceButton.disabled = !ready;
+        resetButton.disabled = !ready;
+        statusEl.textContent = ready
+          ? `composerから${notes.length}個のノートを読み込みました。外でもこのまま練習できます。`
+          : "composerの譜面に、バイオリンで表示できるメロディが見つかりませんでした。";
+        updateHeadsUp(0);
+        draw(0);
+        return true;
+      } catch (error) {
+        statusEl.textContent = `composerの譜面を読み込めませんでした: ${error.message}`;
+        return false;
+      }
+    }
+
+    function parseMusicXml(text) {
+      const xml = new DOMParser().parseFromString(text, "application/xml");
+      if (xml.querySelector("parsererror")) throw new Error("XMLとして読めません。");
+      const part = xml.querySelector("part");
+      if (!part) throw new Error("part要素がありません。");
+
+      let divisions = 1;
+      let currentTime = 0;
+      const parsed = [];
+
+      part.querySelectorAll("measure").forEach((measure) => {
+        const divNode = measure.querySelector("attributes divisions");
+        if (divNode) divisions = Number(divNode.textContent) || divisions;
+
+        measure.querySelectorAll("note").forEach((noteNode) => {
+          const duration = Number(noteNode.querySelector("duration")?.textContent || 0) / divisions;
+          const isChord = Boolean(noteNode.querySelector("chord"));
+          const isRest = Boolean(noteNode.querySelector("rest"));
+
+          if (!isRest) {
+            const pitch = noteNode.querySelector("pitch");
+            const step = pitch?.querySelector("step")?.textContent;
+            const octave = Number(pitch?.querySelector("octave")?.textContent);
+            const alter = Number(pitch?.querySelector("alter")?.textContent || 0);
+            if (step && Number.isFinite(octave)) {
+              parsed.push({
+                midi: pitchToMidi(step, octave, alter),
+                start: currentTime,
+                duration: Math.max(duration, 0.25),
+              });
+            }
+          }
+
+          if (!isChord) currentTime += Math.max(duration, 0);
+        });
+      });
+      return parsed;
+    }
+
+    function pitchToMidi(step, octave, alter) {
+      const base = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }[step];
+      return (octave + 1) * 12 + base + alter;
+    }
+
+    function buildScoreNotes(parsed) {
+      return parsed.map((note, index) => {
+        const fingering = chooseFingering(note.midi);
+        if (!fingering) return null;
+        return {
+          id: index,
+          midi: note.midi,
+          start: note.start,
+          duration: note.duration,
+          stringIndex: fingering.stringIndex,
+          finger: fingering.finger,
+          played: false,
+        };
+      }).filter(Boolean);
+    }
+
+    function chooseFingering(midi) {
+      const candidates = strings
+        .map((string, stringIndex) => ({ stringIndex, offset: midi - string.open }))
+        .filter((candidate) => candidate.offset >= 0 && candidate.offset <= 7);
+      if (!candidates.length) return null;
+      const preferred = candidates.reduce((best, current) => {
+        const bestCost = Math.abs(best.offset - 2) + best.stringIndex * 0.18;
+        const currentCost = Math.abs(current.offset - 2) + current.stringIndex * 0.18;
+        return currentCost < bestCost ? current : best;
+      });
+      return { stringIndex: preferred.stringIndex, finger: preferred.offset };
+    }
+
+    function startScore() {
+      if (!notes.length) return;
+      notes.forEach((note) => { note.played = false; });
+      running = true;
+      startedAt = performance.now() - beatToMs(pausedBeat);
+      startButton.disabled = true;
+      stopButton.disabled = false;
+      statusEl.textContent = "譜面を流しています。音名・弦・指番号を見ながら弾いてください。";
+      ensureAudio();
+      loop();
+    }
+
+    function stopScore(message) {
+      running = false;
+      pausedBeat = currentBeat();
+      cancelAnimationFrame(animation);
+      stopActiveSounds();
+      startButton.disabled = notes.length === 0;
+      stopButton.disabled = true;
+      statusEl.textContent = message;
+      draw(pausedBeat);
+    }
+
+    function resetScore() {
+      running = false;
+      pausedBeat = 0;
+      notes.forEach((note) => { note.played = false; });
+      stopActiveSounds();
+      startButton.disabled = notes.length === 0;
+      stopButton.disabled = true;
+      positionEl.textContent = "0:00";
+      updateHeadsUp(0);
+      draw(0);
+      statusEl.textContent = "先頭に戻しました。";
+    }
+
+    function downloadOfflinePage() {
+      const html = "<!doctype html>\n" + document.documentElement.outerHTML;
+      const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "violin-street-score.html";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      statusEl.textContent = "オフライン用HTMLを保存しました。スマホに送れば、ネットなしでも開けます。";
+    }
+
+    function beatToMs(beat) {
+      const bpm = Number(bpmInput.value) || 92;
+      return beat / bpm * 60 * 1000;
+    }
+
+    function currentBeat() {
+      if (!running) return pausedBeat;
+      const bpm = Number(bpmInput.value) || 92;
+      return Math.max(0, (performance.now() - startedAt) / 1000 / 60 * bpm);
+    }
+
+    function loop() {
+      const beat = currentBeat();
+      draw(beat);
+      updateHeadsUp(beat);
+      playDueNotes(beat);
+      const lastBeat = Math.max(...notes.map((note) => note.start + note.duration), 0);
+      if (beat > lastBeat + 3) {
+        pausedBeat = 0;
+        stopScore("最後まで流しました。もう一度使う時は再生を押してください。");
+        return;
+      }
+      animation = requestAnimationFrame(loop);
+    }
+
+    function laneBounds(index) {
+      const width = canvas.getBoundingClientRect().width;
+      const laneWidth = width / 4;
+      return { x: laneWidth * index, width: laneWidth, center: laneWidth * index + laneWidth / 2 };
+    }
+
+    function draw(beat) {
+      const rect = canvas.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
+      const targetY = height * 0.72;
+      const travelBeats = Number(zoomSelect.value);
+      const bright = brightInput.checked;
+
+      ctx.clearRect(0, 0, width, height);
+      drawStage(width, height, targetY, bright);
+
+      notes.forEach((note) => {
+        const y = targetY - (note.start - beat) / travelBeats * height;
+        if (y < -90 || y > height + 90) return;
+        drawNote(note, y, Math.abs(note.start - beat) < 0.35, bright);
+      });
+    }
+
+    function drawStage(width, height, targetY, bright) {
+      const laneColors = bright
+        ? ["#312e81", "#164e63", "#14532d", "#7c2d12"]
+        : ["#17163d", "#082f3a", "#092b18", "#3a1708"];
+
+      for (let i = 0; i < 4; i++) {
+        const lane = laneBounds(i);
+        ctx.fillStyle = laneColors[i];
+        ctx.fillRect(lane.x, 0, lane.width, height);
+        ctx.strokeStyle = bright ? "rgba(255,255,255,.28)" : "rgba(255,255,255,.14)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(lane.x, 0);
+        ctx.lineTo(lane.x, height);
+        ctx.stroke();
+
+        ctx.fillStyle = bright ? "#ffffff" : "rgba(255,255,255,.78)";
+        ctx.font = "900 22px Segoe UI";
+        ctx.textAlign = "center";
+        ctx.fillText(`${strings[i].name}線`, lane.center, 34);
+      }
+
+      ctx.fillStyle = "rgba(250,204,21,.16)";
+      ctx.fillRect(0, targetY - 36, width, 72);
+      ctx.strokeStyle = bright ? "#facc15" : "rgba(250,204,21,.82)";
+      ctx.lineWidth = bright ? 5 : 3;
+      ctx.beginPath();
+      ctx.moveTo(0, targetY);
+      ctx.lineTo(width, targetY);
+      ctx.stroke();
+
+      ctx.fillStyle = "#fef3c7";
+      ctx.font = "900 14px Segoe UI";
+      ctx.textAlign = "left";
+      ctx.fillText("ここで弾く", 14, targetY - 43);
+    }
+
+    function drawNote(note, y, active, bright) {
+      const lane = laneBounds(note.stringIndex);
+      const w = Math.min(bright ? 142 : 128, lane.width - 14);
+      const h = active ? 68 : 58;
+      const x = lane.center - w / 2;
+      const radius = 8;
+
+      ctx.fillStyle = active ? "#facc15" : strings[note.stringIndex].color;
+      roundedRect(x, y - h / 2, w, h, radius);
+      ctx.fill();
+
+      ctx.strokeStyle = active ? "#ffffff" : "rgba(255,255,255,.75)";
+      ctx.lineWidth = active ? 4 : 2;
+      ctx.stroke();
+
+      ctx.fillStyle = active ? "#111827" : "#ffffff";
+      ctx.textAlign = "center";
+      ctx.font = `900 ${active ? 24 : 21}px Segoe UI`;
+      ctx.fillText(fingerNames[note.finger], lane.center, y - 6);
+      ctx.font = `900 ${active ? 15 : 13}px Segoe UI`;
+      ctx.fillText(midiName(note.midi), lane.center, y + 20);
+    }
+
+    function roundedRect(x, y, width, height, radius) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+    }
+
+    function updateHeadsUp(beat) {
+      const current = notes.find((note) => beat >= note.start - 0.25 && beat <= note.start + note.duration);
+      const next = notes.find((note) => note.start > beat + 0.1);
+      const note = current || next;
+      nowNoteEl.textContent = current ? midiName(current.midi) : "--";
+      nowFingerEl.textContent = current
+        ? `${strings[current.stringIndex].name}線 ${fingerNames[current.finger]}`
+        : note ? `${strings[note.stringIndex].name}線 ${fingerNames[note.finger]}` : "--";
+      nextNoteEl.textContent = next ? `${midiName(next.midi)} / ${strings[next.stringIndex].name}線` : "--";
+      positionEl.textContent = formatTime(beatToMs(beat) / 1000);
+    }
+
+    function midiName(midi) {
+      const names = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+      return `${names[midi % 12]}${Math.floor(midi / 12) - 1}`;
+    }
+
+    function ensureAudio() {
+      if (!soundInput.checked) return;
+      audioContext = audioContext || new AudioContext();
+      if (audioContext.state === "suspended") {
+        audioContext.resume();
+      }
+    }
+
+    function playDueNotes(beat) {
+      if (!soundInput.checked || !audioContext) return;
+      notes.forEach((note) => {
+        if (note.played || note.start > beat) return;
+        note.played = true;
+        playTone(note.midi, note.duration);
+      });
+    }
+
+    function playTone(midi, beatDuration) {
+      const bpm = Number(bpmInput.value) || 92;
+      const seconds = Math.max(0.12, Math.min(1.25, beatDuration * 60 / bpm * 0.88));
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      const filter = audioContext.createBiquadFilter();
+      const now = audioContext.currentTime;
+
+      osc.type = "triangle";
+      osc.frequency.value = 440 * Math.pow(2, (midi - 69) / 12);
+      filter.type = "lowpass";
+      filter.frequency.value = 1600;
+      gain.gain.setValueAtTime(0.001, now);
+      gain.gain.linearRampToValueAtTime(0.075, now + 0.02);
+      gain.gain.setValueAtTime(0.05, now + Math.max(0.03, seconds - 0.06));
+      gain.gain.exponentialRampToValueAtTime(0.001, now + seconds);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioContext.destination);
+      osc.start(now);
+      osc.stop(now + seconds + 0.02);
+      activeSounds.push(osc);
+      osc.addEventListener("ended", () => {
+        activeSounds = activeSounds.filter((sound) => sound !== osc);
+      });
+    }
+
+    function stopActiveSounds() {
+      activeSounds.forEach((sound) => {
+        try {
+          sound.stop();
+        } catch (error) {
+          // Already stopped.
+        }
+      });
+      activeSounds = [];
+    }
+
+    function formatTime(value) {
+      const minutes = Math.floor(value / 60);
+      const seconds = Math.floor(value % 60);
+      return `${minutes}:${String(seconds).padStart(2, "0")}`;
+    }
+
+    window.violinStreetScore = {
+      parseMusicXml,
+      buildScoreNotes,
+      chooseFingering,
+    };
+
+    resizeCanvas();
+    loadGeneratedScore();
+    draw(0);
+  </script>
+</body>
+</html>

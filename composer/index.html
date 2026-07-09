@@ -458,7 +458,7 @@
         <h1>Hum Composer</h1>
         <p class="lead">鼻歌からドレミの下書きを作って、ブロックの長さを直感的に調整し、MusicXMLとして保存します。拍数や音符名を知らなくても使える形にしています。</p>
       </div>
-      <a class="back" href="/game">動く譜面へ</a>
+      <a class="back" href="/game/">動く譜面へ</a>
     </header>
 
     <div class="layout">
@@ -1027,6 +1027,12 @@
 
     function openInScore() {
       const xml = buildMusicXml();
+      localStorage.setItem("violinStreetScore.generatedMusicXml", xml);
+      localStorage.setItem("violinStreetScore.generatedAt", new Date().toISOString());
+      setStatus("動く譜面へ送りました。新しい画面でそのまま練習できます。");
+      const target = ["127.0.0.1", "localhost"].includes(location.hostname) ? "/game" : "/game/";
+      window.open(target, "_blank");
+      return;
       const blob = new Blob([xml], { type: "application/vnd.recordare.musicxml+xml" });
       const file = new File([blob], "hum-composer.musicxml", { type: blob.type });
       window.generatedMusicXml = file;
